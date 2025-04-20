@@ -1,288 +1,159 @@
 import pandas as pd
-
-# Load both datasets
-
-
-movies = pd.read_csv(r'C:\Users\sanjeevni\PycharmProjects\PythonProject\movie.csv')
-print(movies.head())
-print(type(movies))  # Check if it's a DataFrame or dictionary
-print(movies)
-print(movies.columns)
-
-
-
-
-import pandas as pd
-import ast
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
-# Load the dataset
-movies = pd.read_csv(r'C:\Users\sanjeevni\PycharmProjects\PythonProject\movie.csv')
-
-# Drop any rows with missing data in important columns
-movies.dropna(inplace=True)
-
-# Helper functions to convert stringified lists to actual lists
-def convert(text):
-    try:
-        return [i['name'] for i in ast.literal_eval(text)]
-    except:
-        return []
-
-def get_director(text):
-    try:
-        for i in ast.literal_eval(text):
-            if i['job'] == 'Director':
-                return i['name']
-        return ""
-    except:
-        return ""
-
-# Apply conversions for cast and crew columns
-movies['cast'] = movies['cast'].apply(lambda x: convert(x)[:3])  # Taking top 3 cast members
-movies['crew'] = movies['crew'].apply(get_director)
-
-# Create a combined 'tags' column using cast and crew
-movies['tags'] = movies['cast'].apply(lambda x: " ".join(x)) + " " + movies['crew']
-
-# Convert tags to lowercase
-movies['tags'] = movies['tags'].str.lower()
-
-# Vectorization using CountVectorizer
-cv = CountVectorizer(max_features=5000, stop_words='english')
-vectors = cv.fit_transform(movies['tags']).toarray()
-
-# Calculate similarity matrix
-similarity = cosine_similarity(vectors)
-
-# Save vectorized data & similarity matrix for later use
-import pickle
-pickle.dump(movies[['movie_id', 'title']].to_dict(), open('movies.pkl', 'wb'))
-pickle.dump(similarity, open('similarity.pkl', 'wb'))
-print(movies[['title', 'tags']].head())
-import pickle
-
-# Load the movies and similarity matrix
-movies = pickle.load(open('movies.pkl', 'rb'))
-similarity = pickle.load(open('similarity.pkl', 'rb'))
-import pickle
-
-# Load the movies and similarity matrix
-movies = pickle.load(open('movies.pkl', 'rb'))
-similarity = pickle.load(open('similarity.pkl', 'rb'))
-
-# Create a function to recommend movies
-import pickle
-
-# Load the movies and similarity matrix
-movies = pickle.load(open('movies.pkl', 'rb'))
-similarity = pickle.load(open('similarity.pkl', 'rb'))
-
-# Create a function to recommend movies
-import pandas as pd
-from fuzzywuzzy import process, fuzz
-
-# Load the dataset
-movies = pd.read_csv(r'C:\Users\sanjeevni\PycharmProjects\PythonProject\movie.csv')
-
-# Process the dataset
-# Assuming you've already done the data processing (like creating 'tags' etc.)
-
-# Function to recommend movies
-def recommend_movie(title):
-    # Remove extra spaces and convert to lowercase
-    title = title.strip().lower()
-
-    # Check if the input title is empty
-    if not title:
-        return "Please enter a valid movie title."
-
-    # Use fuzzy matching to find the closest match to the entered movie title
-    best_match = process.extractOne(title, movies['title'].tolist(), scorer=fuzz.partial_ratio)
-
-    if best_match:
-        movie_index = movies[movies['title'] == best_match[0]].index[0]
-    else:
-        return "Movie not found in the dataset."
-
-    # Get the similarity scores for the movie
-    similarity_scores = list(enumerate(similarity[movie_index]))
-
-    # Sort the movies based on similarity scores
-    similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
-
-    # Get the top 10 similar movies (exclude the first one, which is the movie itself)
-    recommended_movies = []
-    for i in range(1, 11):
-        movie_index = similarity_scores[i][0]
-        recommended_movies.append(movies['title'].iloc[movie_index])
-
-    return recommended_movies
-# Test with a known movie
-movie_title = 'Avatar'  # A movie that exists in your dataset
-recommended = recommend_movie(movie_title)
-print(f"Recommended movies for '{movie_title}':\n", recommended)
-
-# Test with another movie title
-movie_title = 'The Dark Knight'  # Another movie in your dataset
-recommended = recommend_movie(movie_title)
-print(f"Recommended movies for '{movie_title}':\n", recommended)
-
-# Test with a movie not in the dataset (edge case)
-movie_title = 'The Matrix Reloaded'  # A movie not in the dataset
-recommended = recommend_movie(movie_title)
-print(f"Recommended movies for '{movie_title}':\n", recommended)
-
-# Test with an empty input (edge case)
-movie_title = ''  # Empty input
-recommended = recommend_movie(movie_title)
-print(f"Recommended movies for '{movie_title}':\n", recommended)
-import pandas as pd
 import ast
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from fuzzywuzzy import process, fuzz
-import pickle
-
-# Load the dataset
-movies = pd.read_csv(r'C:\Users\sanjeevni\PycharmProjects\PythonProject\movie.csv')
-
-# Drop any rows with missing data in important columns
-movies.dropna(inplace=True)
-
-# Helper functions to convert stringified lists to actual lists
-def convert(text):
-    try:
-        return [i['name'] for i in ast.literal_eval(text)]
-    except:
-        return []
-
-def get_director(text):
-    try:
-        for i in ast.literal_eval(text):
-            if i['job'] == 'Director':
-                return i['name']
-        return ""
-    except:
-        return ""
-
-# Apply conversions for cast and crew columns
-movies['cast'] = movies['cast'].apply(lambda x: convert(x)[:3])  # Taking top 3 cast members
-movies['crew'] = movies['crew'].apply(get_director)
-
-# Create a combined 'tags' column using cast and crew
-movies['tags'] = movies['cast'].apply(lambda x: " ".join(x)) + " " + movies['crew']
-
-# Convert tags to lowercase
-movies['tags'] = movies['tags'].str.lower()
-
-# Vectorization using CountVectorizer
-cv = CountVectorizer(max_features=5000, stop_words='english')
-vectors = cv.fit_transform(movies['tags']).toarray()
-
-# Calculate similarity matrix
-similarity = cosine_similarity(vectors)
-
-# Save vectorized data & similarity matrix for later use
-pickle.dump(movies[['movie_id', 'title']].to_dict(), open('movies.pkl', 'wb'))
-pickle.dump(similarity, open('similarity.pkl', 'wb'))
-
-# Function to recommend movies
-def recommend_movie(title):
-    # Remove extra spaces and convert to lowercase
-    title = title.strip().lower()
-
-    # Check if the input title is empty
-    if not title:
-        return "Please enter a valid movie title."
-
-    # Use fuzzy matching to find the closest match to the entered movie title
-    best_match = process.extractOne(title, movies['title'].tolist(), scorer=fuzz.partial_ratio)
-
-    if best_match:
-        movie_index = movies[movies['title'] == best_match[0]].index[0]
-    else:
-        return "Movie not found in the dataset."
-
-    # Get the similarity scores for the movie
-    similarity_scores = list(enumerate(similarity[movie_index]))
-
-    # Sort the movies based on similarity scores
-    similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
-
-    # Get the top 10 similar movies (exclude the first one, which is the movie itself)
-    recommended_movies = []
-    for i in range(1, 11):
-        movie_index = similarity_scores[i][0]
-        recommended_movies.append(movies['title'].iloc[movie_index])
-
-    return recommended_movies
-
-# Test with a known movie
-movie_title = 'Avatar'  # A movie that exists in your dataset
-recommended = recommend_movie(movie_title)
-print(f"Recommended movies for '{movie_title}':\n", recommended)
-
-# Test with another movie title
-movie_title = 'The Dark Knight'  # Another movie in your dataset
-recommended = recommend_movie(movie_title)
-print(f"Recommended movies for '{movie_title}':\n", recommended)
-
-# Test with a movie not in the dataset (edge case)
-movie_title = 'The Matrix Reloaded'  # A movie not in the dataset
-recommended = recommend_movie(movie_title)
-print(f"Recommended movies for '{movie_title}':\n", recommended)
-
-# Test with an empty input (edge case)
-movie_title = ''  # Empty input
-recommended = recommend_movie(movie_title)
-print(f"Recommended movies for '{movie_title}':\n", recommended)
-import pandas as pd
-ratings = pd.read_csv(r'C:\Users\sanjeevni\PycharmProjects\PythonProject\rating.csv')
-print(ratings.head())
-# Merge the ratings data with the movies data based on 'movie_id'
-print(movies.columns)
-print(ratings.columns)
-# Rename 'movieId' to 'movie_id' in the ratings dataframe
-ratings.rename(columns={'movieId': 'movie_id'}, inplace=True)
-
-# Now perform the merge operation
-movie_ratings = pd.merge(movies, ratings, on='movie_id', how='inner')
-
-# Verify the merged dataframe
-print(movie_ratings.head())
-# Create a user-item matrix for collaborative filtering
-user_movie_matrix = movie_ratings.pivot_table(index='userId', columns='title', values='rating')
-
-# Display the matrix
-print(user_movie_matrix.head())
-# Fill missing values with 0 (indicating unrated movies)
-user_movie_matrix_filled = user_movie_matrix.fillna(0)
-
-# Display the matrix after filling missing values
-print(user_movie_matrix_filled.head())
-# Select only the first 100 users and 100 movies to reduce the matrix size
-user_movie_matrix_small = user_movie_matrix.iloc[:100, :100]
-user_movie_matrix_filled_small = user_movie_matrix_small.fillna(0)
-
-# Now calculate the similarity on the smaller matrix
-user_similarity_small = cosine_similarity(user_movie_matrix_filled_small)
-from sklearn.impute import SimpleImputer
 from sklearn.decomposition import TruncatedSVD
+from sklearn.impute import SimpleImputer
 import numpy as np
+import pickle
+from pymongo import MongoClient
+from datetime import datetime
 
-# Remove columns (movies) that are entirely NaN
-user_movie_matrix_small_cleaned = user_movie_matrix_small.loc[:, user_movie_matrix_small.notna().any()]
+# Load the movies and ratings datasets
+movies = pd.read_csv(r'C:\Users\sanjeevni\PycharmProjects\PythonProject\movie.csv')
+ratings = pd.read_csv(r'C:\Users\sanjeevni\PycharmProjects\PythonProject\rating.csv')
 
-# Impute missing values in the cleaned matrix
-imputer = SimpleImputer(strategy='mean')
-user_movie_matrix_imputed = imputer.fit_transform(user_movie_matrix_small_cleaned)
+# Rename for merging compatibility
+movies.rename(columns={'movie_id': 'movieId'}, inplace=True)
 
-# Apply SVD after imputation
-n_components = min(100, user_movie_matrix_imputed.shape[1])  # Use a smaller number of components if needed
-svd = TruncatedSVD(n_components=n_components, random_state=42)
+# Clean up movies dataset
+movies.dropna(inplace=True)
+
+# Helper functions
+def convert(text):
+    try:
+        return [i['name'] for i in ast.literal_eval(text)]
+    except:
+        return []
+
+def get_director(text):
+    try:
+        for i in ast.literal_eval(text):
+            if i['job'] == 'Director':
+                return i['name']
+        return ""
+    except:
+        return ""
+
+# Apply conversions for cast and crew columns
+movies['cast'] = movies['cast'].apply(lambda x: convert(x)[:3])
+movies['crew'] = movies['crew'].apply(get_director)
+
+# Create a combined 'tags' column
+movies['tags'] = movies['cast'].apply(lambda x: " ".join(x)) + " " + movies['crew']
+movies['tags'] = movies['tags'].str.lower()
+
+# Content-based filtering
+cv = CountVectorizer(max_features=5000, stop_words='english')
+vectors = cv.fit_transform(movies['tags']).toarray()
+similarity = cosine_similarity(vectors)
+
+# Save vectorized data
+pickle.dump(movies[['movieId', 'title']].to_dict(), open('movies.pkl', 'wb'))
+pickle.dump(similarity, open('similarity.pkl', 'wb'))
+
+# Collaborative filtering
+movie_ratings = pd.merge(movies, ratings, on='movieId', how='inner')
+user_movie_matrix = movie_ratings.pivot_table(index='userId', columns='title', values='rating')
+user_movie_matrix_filled = user_movie_matrix.fillna(0)
+user_movie_matrix_imputed = SimpleImputer(strategy='mean').fit_transform(user_movie_matrix_filled)
+svd = TruncatedSVD(n_components=100, random_state=42)
 reduced_matrix = svd.fit_transform(user_movie_matrix_imputed)
 
-# Verify if any NaNs remain
-print(np.any(np.isnan(user_movie_matrix_imputed))) 
+# Recommendation function
+def recommend_movie(title):
+    title = title.strip().lower()
+    best_match = process.extractOne(title, movies['title'].tolist(), scorer=fuzz.partial_ratio)
+    if not best_match:
+        return "Movie not found in the dataset."
+
+    movie_index = movies[movies['title'] == best_match[0]].index[0]
+
+    content_similar_scores = list(enumerate(similarity[movie_index]))
+    content_similar_scores = sorted(content_similar_scores, key=lambda x: x[1], reverse=True)
+
+    collaborative_similar_scores = reduced_matrix[:, movie_index]
+    collaborative_similar_scores = np.argsort(collaborative_similar_scores)[::-1]
+
+    recommended_movies = []
+    content_movie_titles = [movies['title'].iloc[content_similar_scores[i][0]] for i in range(1, 6)]
+    recommended_movies.extend(content_movie_titles)
+
+    for i in range(1, 6):
+        collaborative_movie_index = collaborative_similar_scores[i]
+        if collaborative_movie_index < len(movies):
+            collaborative_movie_title = movies['title'].iloc[collaborative_movie_index]
+            if collaborative_movie_title not in recommended_movies:
+                recommended_movies.append(collaborative_movie_title)
+
+    return recommended_movies
+
+# Save SVD features to MongoDB
+active_users = ratings['userId'].value_counts()
+active_users = active_users[active_users > 50].index
+popular_movies = ratings['movieId'].value_counts()
+popular_movies = popular_movies[popular_movies > 100].index
+
+filtered_ratings = ratings[
+    ratings['userId'].isin(active_users) &
+    ratings['movieId'].isin(popular_movies)
+]
+
+merged_df = filtered_ratings.merge(movies, on='movieId')
+user_movie_matrix = merged_df.pivot_table(index='userId', columns='title', values='rating')
+user_movie_matrix_filled = user_movie_matrix.fillna(0)
+svd = TruncatedSVD(n_components=20, random_state=42)
+matrix_svd = svd.fit_transform(user_movie_matrix_filled)
+reduced_matrix_df = pd.DataFrame(matrix_svd, index=user_movie_matrix.index)
+
+recommendation_docs = [
+    {
+        'userId': int(user_id),
+        'features': row.round(4).tolist()
+    }
+    for user_id, row in reduced_matrix_df.iterrows()
+]
+
+client = MongoClient("mongodb://localhost:27017/")
+db = client["movie_recommendation"]
+collection = db["recommendations"]
+collection.delete_many({})
+collection.insert_many(recommendation_docs)
+
+print("\u2705 Recommendations saved to MongoDB successfully!")
+
+# Test Example
+movie_title = input("Enter the movie title: ")
+recommended = recommend_movie(movie_title)
+print(f"Recommended movies for '{movie_title}':\n", recommended)
+from pymongo import MongoClient
+import pprint
+
+# Connect to MongoDB
+client = MongoClient("mongodb://localhost:27017/")
+db = client["movie_recommendation"]
+collection = db["recommendations"]
+
+# Fetch and display all recommendations
+for doc in collection.find().limit(5):  # Change limit as needed
+    pprint.pprint(doc)
+from pymongo import MongoClient
+
+client = MongoClient("mongodb://localhost:27017/")
+db = client["movie_recommendation"]
+collection = db["recommendations"]
+
+# Debug: Check if data is there
+print("Document count:", collection.count_documents({}))
+
+# Optional: Re-insert a test document
+if collection.count_documents({}) == 0:
+    collection.insert_one({
+        "userId": 1,
+        "features": [0.123, 0.456, 0.789]
+    })
+    print("✅ Sample document inserted!")
+
+# Show sample
+print("Sample doc:", collection.find_one())
